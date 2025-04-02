@@ -28,47 +28,136 @@ def set_button_pressed(value):
     button_pressed = value
 
 
-def crop_image_by_rectangle(image, x1, y1, x2, y2):
-    """
-    Функция для обрезки изображения по координатам прямоугольника.
-    :param image: Входное изображение
+def rotate_and_crop_image(image, center, angle, width, height, scale=1.0):
+    """ Функция для поворота и обрезки изображения. """
+    # Получаем размер изображения
+    (full_height, full_width) = image.shape[:2] # размеры всей картинки
+
+    # Создаем матрицу поворота
+    M = cv2.getRotationMatrix2D(center, angle, scale)
+
+    # Выполняем поворот изображения
+    rotated_img = cv2.warpAffine(image, M, (full_width, full_height))
+
+    # Вычисляем новые границы после поворота
+    new_height, new_width = rotated_img.shape[:2]
+    x1 = max(0, int(center[0] - new_width // 2))
+    y1 = max(0, int(center[1] - new_height // 2))
+    x2 = min(new_width, int(center[0] + new_width // 2))
+    y2 = min(new_height, int(center[1] + new_height // 2))
+
+    print(f"x1, x2, y1, y2", x1, x2, y1, y2)
+    print('height ', height)
+    print('width ', width)
+    print('type ', type(rotated_img))
+
+    # Обрезаем изображение по новой рамке
+    # cropped_image = rotated_img[y1:y2, x1:x2]
+
+    # Рассчитываем координаты верхнего левого и нижнего правого углов прямоугольника
+    top_left_x = int(center[0] - width / 2)
+    top_left_y = int(center[1] - height / 2)
+    bottom_right_x = int(center[0] + width / 2)
+    bottom_right_y = int(center[1] + height / 2)
+    cropped_image = rotated_img[top_left_y:bottom_right_y, top_left_x:bottom_right_x]
+
+
+    return cropped_image
+
+def calculate_side_lengths(x1, y1, x2, y2):
+    """ Рассчитывает длину и ширину рамки.
     :param x1: Левая граница прямоугольника
     :param y1: Верхняя граница прямоугольника
     :param x2: Правая граница прямоугольника
     :param y2: Нижняя граница прямоугольника
-    :return: Обрезанное изображение
-    """
-    cropped_image = image[y1:y2, x1:x2]
-    return cropped_image
+    :return: Длина и ширина рамки """
+    width = abs(x2 - x1)
+    height = abs(y2 - y1)
+    return width, height
+
+def print_size(name_file, width, height):
+    print(f"Размеры рамки для {name_file}: ширина = {width}, высота = {height}")
 
 
-def capture_images(full_contours_frame, full_camera_frame, full_result_frame):
+def calculate_rotation_angle(box):
+    """ Рассчитывает угол поворота для выравнивания длинной стороны рамки.
+    :param box: Координаты вершин рамки (np.ndarray)
+    :return: Угол поворота в градусах """
+    # Извлекаем координаты первой и второй точек рамки
+    pt1 = box[0]
+    pt2 = box[1]
+
+    # Вычисляем вектор между двумя точками
+    vector = pt2 - pt1
+
+    # Вычисляем угол вектора относительно оси X
+    angle_rad = np.arctan2(vector[1], vector[0])
+
+    # Конвертируем радианы в градусы
+    angle_deg = np.degrees(angle_rad)
+
+    return angle_deg
+
+
+def capture_images(full_contours_frame, full_camera_frame, full_result_frame, angle):
     # Сохраняем полные изображения
-    cv2.imwrite('full_contours.png', full_contours_frame)
-    cv2.imwrite('full_camera.png', full_camera_frame)
-    cv2.imwrite('full_result.png', full_result_frame)
+    if full_contours_frame is not None and full_contours_frame.size > 0:
+        cv2.imwrite('full_contours.png', full_contours_frame)
+    else:
+        print("Ошибка: полное изображение contours отсутствует или пустое.")
+
+    if full_camera_frame is not None and full_camera_frame.size > 0:
+        cv2.imwrite('full_camera.png', full_camera_frame)
+    else:
+        print("Ошибка: полное изображение camera отсутствует или пустое.")
+
+    if full_result_frame is not None and full_result_frame.size > 0:
+        cv2.imwrite('full_result.png', full_result_frame)
+    else:
+        print("Ошибка: полное изображение result отсутствует или пустое.")
 
     # Обрезаем изображения по габаритам зеленой рамки
     global x1, x2, y1, y2
-    cropped_contours_frame = crop_image_by_rectangle(full_contours_frame, x1, y1, x2, y2)
-    cropped_camera_frame = crop_image_by_rectangle(full_camera_frame, x1, y1, x2, y2)
-    cropped_result_frame = crop_image_by_rectangle(full_result_frame, x1, y1, x2, y2)
+    center = ((x1 + x2) // 2, (y1 + y2) // 2)
+    # angle = 45  # Задаем угол поворота (можно изменять)
 
-    # Сохраняем обрезанные изображения
-    cv2.imwrite('cropped_contours.png', cropped_contours_frame)
-    cv2.imwrite('cropped_camera.png', cropped_camera_frame)
-    cv2.imwrite('cropped_result.png', cropped_result_frame)
+
+    if full_contours_frame is not None and full_contours_frame.size > 0:
+        width, height = calculate_side_lengths(x1, y1, x2, y2)
+        print_size('cropped_contours.png', width, height)
+        cropped_contours_frame = rotate_and_crop_image(full_contours_frame, center, angle, width, height)
+        cv2.imwrite('cropped_contours.png', cropped_contours_frame)
+
+    else:
+        print("Ошибка: обрезанное изображение contours отсутствует или пустое.")
+
+    if full_camera_frame is not None and full_camera_frame.size > 0:
+        width, height = calculate_side_lengths(x1, y1, x2, y2)
+        print_size('cropped_camera.png', width, height)
+        cropped_camera_frame = rotate_and_crop_image(full_camera_frame, center, angle, width, height)
+        cv2.imwrite('cropped_camera.png', cropped_camera_frame)
+
+
+    else:
+        print("Ошибка: обрезанное изображение camera отсутствует или пустое.")
+
+    if full_result_frame is not None and full_result_frame.size > 0:
+        width, height = calculate_side_lengths(x1, y1, x2, y2)
+        print_size('cropped_result.png', width, height)
+        cropped_result_frame = rotate_and_crop_image(full_result_frame, center, angle, width, height)
+        cv2.imwrite('cropped_result.png', cropped_result_frame)
+
+    else:
+        print("Ошибка: обрезанное изображение result отсутствует или пустое.")
 
     print("Шесть фотографий сделаны и сохранены.")
 
 
 # Основная функция программы
 def main():
-    global button_pressed
-
-    global x1, x2, y1, y2
-    x1, x2, y1, y2 = 0, 0, 0, 0 # Координаты для обрезки по рамке картинки
+    global button_pressed, x1, x2, y1, y2
     button_pressed = False
+    x1, x2, y1, y2 = 0, 0, 0, 0  # Координаты для обрезки по рамке картинки
 
     cv2.namedWindow("result")  # Создаем главное окно
     cv2.namedWindow("settings")  # Создаем окно настроек
@@ -121,8 +210,6 @@ def main():
         cv2.imshow("camera", img)  # Показывает все контуры
 
         # Алгоритм поиска и рисования прямоугольника
-
-
         for cnt in contours:
             rect = cv2.minAreaRect(cnt)
             box = cv2.boxPoints(rect)
@@ -130,21 +217,21 @@ def main():
             tup = tuple(box.tolist())
             area = calculateTheArea(tup)
 
-
-
             if area >= Ar:
                 cv2.drawContours(img2, [box], -1, (0, 255, 0), 2)
                 # global x1, x2, y1, y2
-                print('3_______', x1, x2, y1,y2, Ar)
                 x1 = int(tup[0][0])
                 x2 = int(tup[2][0])
                 y1 = int(tup[0][1])
                 y2 = int(tup[2][1])
-                print('2 x1, x2, y1, y2', x1, x2, y1, y2)
 
-            cv2.imshow('contours', img2) ##
+                angle = calculate_rotation_angle(box)
 
-            cv2.imshow('result', thresh)
+                print('Поворот: ', angle)
+
+                cv2.imshow('contours', img2) ##
+
+        cv2.imshow('result', thresh)
 
         if cv2.waitKey(10) == 32:  # Клавиша Пробел
             print("________", x1, x2, y1, y2)
@@ -153,7 +240,7 @@ def main():
 
         if button_pressed:
             # Формирование координат зеленой рамки
-            capture_images(img2, img, thresh)
+            capture_images(img2, img, thresh, angle )
             button_pressed = False
 
         if cv2.waitKey(10) == 27:  # Клавиша Esc
