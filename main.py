@@ -18,8 +18,8 @@ def nothing(*arg):
 def run_tkinter():
     global button_pressed
     root = tk.Tk()
-    button = tk.Button(root, text="Сделать фото", command=lambda: set_button_pressed(True))
-    button.pack()
+    # button = tk.Button(root, text="Сделать фото", command=lambda: set_button_pressed(True))
+    # button.pack()
     root.mainloop()
 
 
@@ -53,6 +53,8 @@ def rotate_and_crop_image(image, center, angle, width, height, scale=1.0):
 
     # Обрезаем изображение по новой рамке
     # cropped_image = rotated_img[y1:y2, x1:x2]
+    # if width > height:
+    #     height, width = width, height
 
     # Рассчитываем координаты верхнего левого и нижнего правого углов прямоугольника
     top_left_x = int(center[0] - width / 2)
@@ -153,6 +155,10 @@ def capture_images(full_contours_frame, full_camera_frame, full_result_frame, an
     print("Шесть фотографий сделаны и сохранены.")
 
 
+def on_button_press():
+    global button_pressed
+    button_pressed = True
+
 # Основная функция программы
 def main():
     global button_pressed, x1, x2, y1, y2
@@ -160,7 +166,7 @@ def main():
     x1, x2, y1, y2 = 0, 0, 0, 0  # Координаты для обрезки по рамке картинки
 
     cv2.namedWindow("result")  # Создаем главное окно
-    cv2.namedWindow("settings")  # Создаем окно настроек
+    # cv2.namedWindow("settings")  # Создаем окно настроек
     cv2.namedWindow("camera")
     cap = cv2.VideoCapture(0)  # Подключаемся к видео камере, передаем в методе индекс веб-камеры
     # ######
@@ -169,29 +175,98 @@ def main():
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)  # Высота кадров в видеопотоке.
     # ######
 
+
+
     # Создаем 6 бегунков для настройки начального и конечного цвета фильтра
     # createTrackbar ('Имя', 'Имя окна', 'начальное значение','максимальное значение','вызов функции при изменении бегунка'
-    cv2.createTrackbar('hue_1', 'settings', 0, 255, nothing)
-    cv2.createTrackbar('satur_1', 'settings', 0, 255, nothing)
-    cv2.createTrackbar('value_1', 'settings', 0, 255, nothing)
-    cv2.createTrackbar('hue_2', 'settings', 213, 255, nothing)
-    cv2.createTrackbar('satur_2', 'settings', 240, 255, nothing)
-    cv2.createTrackbar('value_2', 'settings', 73, 255, nothing)
-    cv2.createTrackbar('Area', 'settings', 89000, 120000, nothing)
-    ####
+    # cv2.createTrackbar('hue_1', 'settings', 0, 255, nothing)
+    # cv2.createTrackbar('satur_1', 'settings', 0, 255, nothing)
+    # cv2.createTrackbar('value_1', 'settings', 0, 255, nothing)
+    # cv2.createTrackbar('hue_2', 'settings', 213, 255, nothing)
+    # cv2.createTrackbar('satur_2', 'settings', 240, 255, nothing)
+    # cv2.createTrackbar('value_2', 'settings', 73, 255, nothing)
+    # cv2.createTrackbar('Area', 'settings', 89000, 120000, nothing)
+    ####______________________________________________
+
+    # Создаем окно настроек с трекбарами и кнопкой
+    settings_window = tk.Toplevel()
+    settings_window.title("Настройки")
+
+
+    # Трекбары
+    hue_1_label = tk.Label(settings_window, text="Hue 1 (Оттенок):")
+    hue_1_slider = tk.Scale(settings_window, from_=0, to=255, orient=tk.HORIZONTAL, length=200)
+    hue_1_slider.grid(row=0, column=1)
+    hue_1_label.grid(row=0, column=0)
+    hue_1_slider.set(0)
+
+    satur_1_label = tk.Label(settings_window, text="Satur 1 (Насыщенность):")
+    satur_1_slider = tk.Scale(settings_window, from_=0, to=255, orient=tk.HORIZONTAL, length=200)
+    satur_1_slider.grid(row=1, column=1)
+    satur_1_label.grid(row=1, column=0)
+    satur_1_slider.set(8)
+
+    value_1_label = tk.Label(settings_window, text="Value 1 (Яркость):")
+    value_1_slider = tk.Scale(settings_window, from_=0, to=255, orient=tk.HORIZONTAL, length=200)
+    value_1_slider.grid(row=2, column=1)
+    value_1_label.grid(row=2, column=0)
+    value_1_slider.set(82)
+
+    hue_2_label = tk.Label(settings_window, text="Hue 2 (Оттенок):")
+    hue_2_slider = tk.Scale(settings_window, from_=0, to=360, orient=tk.HORIZONTAL, length=200)
+    hue_2_slider.grid(row=3, column=1)
+    hue_2_label.grid(row=3, column=0)
+    hue_2_slider.set(181)
+
+    satur_2_label = tk.Label(settings_window, text="Satur 2 (Насыщенность):")
+    satur_2_slider = tk.Scale(settings_window, from_=0, to=255, orient=tk.HORIZONTAL, length=200)
+    satur_2_slider.grid(row=4, column=1)
+    satur_2_label.grid(row=4, column=0)
+    satur_2_slider.set(202)
+
+    value_2_label = tk.Label(settings_window, text="Value 2 (Яркость):")
+    value_2_slider = tk.Scale(settings_window, from_=0, to=255, orient=tk.HORIZONTAL, length=200)
+    value_2_slider.grid(row=5, column=1)
+    value_2_label.grid(row=5, column=0)
+    value_2_slider.set(155)
+
+
+    area_label = tk.Label(settings_window, text="Area: ")
+    area_slider = tk.Scale(settings_window, from_=0, to=120000, orient=tk.HORIZONTAL, length=255)
+    area_slider.grid(row=6, column=1)
+    area_label.grid(row=6, column=0)
+    area_slider.set(90000)
+
+    # Кнопка "Сделать фото"
+    photo_button = tk.Button(settings_window, text="Сделать фото", command=on_button_press)
+    photo_button.grid(row=7, column=1)
 
     while True:
         ret, img = cap.read()  # img - сама картинка с камеры, ret - флаг
+
+        if not ret:
+            continue
+
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)  # HSV формат изображения
 
+
         # Считывание значений бегунков
-        h1 = cv2.getTrackbarPos('hue_1', 'settings')
-        s1 = cv2.getTrackbarPos('satur_1', 'settings')
-        v1 = cv2.getTrackbarPos('value_1', 'settings')
-        h2 = cv2.getTrackbarPos('hue_2', 'settings')
-        s2 = cv2.getTrackbarPos('satur_2', 'settings')
-        v2 = cv2.getTrackbarPos('value_2', 'settings')
-        Ar = cv2.getTrackbarPos('Area', 'settings')
+
+        h1 = hue_1_slider.get()
+        s1 = satur_1_slider.get()
+        v1 = value_1_slider.get()
+        h2 = hue_2_slider.get()
+        s2 = satur_2_slider.get()
+        v2 = value_2_slider.get()
+        Ar = area_slider.get()  # Значение Area фиксировано
+
+        # h1 = cv2.getTrackbarPos('hue_1', 'settings')
+        # s1 = cv2.getTrackbarPos('satur_1', 'settings')
+        # v1 = cv2.getTrackbarPos('value_1', 'settings')
+        # h2 = cv2.getTrackbarPos('hue_2', 'settings')
+        # s2 = cv2.getTrackbarPos('satur_2', 'settings')
+        # v2 = cv2.getTrackbarPos('value_2', 'settings')
+        # Ar = cv2.getTrackbarPos('Area', 'settings')
 
         # Формируем начальный и конечный цвет фильтра
         h_min = np.array((h1, s1, v1), np.uint8)
