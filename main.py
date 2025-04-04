@@ -3,6 +3,7 @@ import numpy as np
 import tkinter as tk
 from threading import Thread
 from skimage.metrics import structural_similarity as ssim
+import math
 
 
 # Функция подсчета площади квадрата по координатам (принимает кортеж списков)
@@ -102,6 +103,7 @@ def calculate_rotation_angle(box):
 
 
 def capture_images(full_contours_frame, full_camera_frame, full_result_frame, angle):
+
     # Сохраняем полные изображения
     if full_contours_frame is not None and full_contours_frame.size > 0:
         cv2.imwrite('full_contours.png', full_contours_frame)
@@ -121,7 +123,7 @@ def capture_images(full_contours_frame, full_camera_frame, full_result_frame, an
     # Обрезаем изображения по габаритам зеленой рамки
     global x1, x2, y1, y2
     center = ((x1 + x2) // 2, (y1 + y2) // 2)
-    # angle = 45  # Задаем угол поворота (можно изменять)
+
 
 
     if full_contours_frame is not None and full_contours_frame.size > 0:
@@ -159,6 +161,30 @@ def on_button_press():
     global button_pressed
     button_pressed = True
 
+
+def rotate_point(point, center, angle):
+    """
+    Функция для поворота точки вокруг указанного центра на заданный угол.
+
+    :param point: Координаты точки (x, y)
+    :param center: Координаты центра вращения (x, y)
+    :param angle: Угол поворота в градусах
+    :return: Новые координаты повернутой точки
+    """
+    # Переводим угол в радианы
+    rad_angle = math.radians(angle)
+
+    # Преобразование координат относительно центра вращения
+    rel_x = point[0] - center[0]
+    rel_y = point[1] - center[1]
+
+    # Вычисляем новые координаты после поворота
+    new_x = rel_x * math.cos(rad_angle) - rel_y * math.sin(rad_angle)
+    new_y = rel_x * math.sin(rad_angle) + rel_y * math.cos(rad_angle)
+
+    # Возвращаем абсолютные координаты
+    return int(round(new_x + center[0])), int(round(new_y + center[1]))
+
 # Основная функция программы
 def main():
     global button_pressed, x1, x2, y1, y2
@@ -166,7 +192,7 @@ def main():
     x1, x2, y1, y2 = 0, 0, 0, 0  # Координаты для обрезки по рамке картинки
 
     cv2.namedWindow("result")  # Создаем главное окно
-    # cv2.namedWindow("settings")  # Создаем окно настроек
+
     cv2.namedWindow("camera")
     cap = cv2.VideoCapture(0)  # Подключаемся к видео камере, передаем в методе индекс веб-камеры
     # ######
@@ -174,19 +200,6 @@ def main():
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)  # Ширина кадров в видеопотоке (в первую очередь этот параметр влияет на размер).
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)  # Высота кадров в видеопотоке.
     # ######
-
-
-
-    # Создаем 6 бегунков для настройки начального и конечного цвета фильтра
-    # createTrackbar ('Имя', 'Имя окна', 'начальное значение','максимальное значение','вызов функции при изменении бегунка'
-    # cv2.createTrackbar('hue_1', 'settings', 0, 255, nothing)
-    # cv2.createTrackbar('satur_1', 'settings', 0, 255, nothing)
-    # cv2.createTrackbar('value_1', 'settings', 0, 255, nothing)
-    # cv2.createTrackbar('hue_2', 'settings', 213, 255, nothing)
-    # cv2.createTrackbar('satur_2', 'settings', 240, 255, nothing)
-    # cv2.createTrackbar('value_2', 'settings', 73, 255, nothing)
-    # cv2.createTrackbar('Area', 'settings', 89000, 120000, nothing)
-    ####______________________________________________
 
     # Создаем окно настроек с трекбарами и кнопкой
     settings_window = tk.Toplevel()
@@ -213,7 +226,7 @@ def main():
     value_1_slider.set(82)
 
     hue_2_label = tk.Label(settings_window, text="Hue 2 (Оттенок):")
-    hue_2_slider = tk.Scale(settings_window, from_=0, to=360, orient=tk.HORIZONTAL, length=200)
+    hue_2_slider = tk.Scale(settings_window, from_=0, to=255, orient=tk.HORIZONTAL, length=200)
     hue_2_slider.grid(row=3, column=1)
     hue_2_label.grid(row=3, column=0)
     hue_2_slider.set(181)
@@ -230,16 +243,41 @@ def main():
     value_2_label.grid(row=5, column=0)
     value_2_slider.set(155)
 
-
     area_label = tk.Label(settings_window, text="Area: ")
-    area_slider = tk.Scale(settings_window, from_=0, to=120000, orient=tk.HORIZONTAL, length=255)
+    area_slider = tk.Scale(settings_window, from_=0, to=120000, orient=tk.HORIZONTAL, length=200)
     area_slider.grid(row=6, column=1)
     area_label.grid(row=6, column=0)
     area_slider.set(90000)
 
+    X_size_label = tk.Label(settings_window, text="X size: ")
+    X_slider = tk.Scale(settings_window, from_=0, to=1000, orient=tk.HORIZONTAL, length=100)
+    X_slider.grid(row=7, column=0)
+    X_size_label.grid(row=7, column=0)
+    X_slider.set(120)
+
+    Y_size_label = tk.Label(settings_window, text="Y size: ")
+    Y_slider = tk.Scale(settings_window, from_=0, to=1000, orient=tk.HORIZONTAL, length=100)
+    Y_slider.grid(row=7, column=1)
+    Y_size_label.grid(row=7, column=1)
+    Y_slider.set(120)
+
+    X_move_label = tk.Label(settings_window, text="X move: ")
+    X_move_slider = tk.Scale(settings_window, from_=-100, to=100, orient=tk.HORIZONTAL, length=100)
+    X_move_slider.grid(row=8, column=0)
+    X_move_label.grid(row=8, column=0)
+    X_move_slider.set(0)
+
+    Y_move_label = tk.Label(settings_window, text="Y move: ")
+    Y_move_slider = tk.Scale(settings_window, from_=-100, to=100, orient=tk.HORIZONTAL, length=100)
+    Y_move_slider.grid(row=8, column=1)
+    Y_move_label.grid(row=8, column=1)
+    Y_move_slider.set(0)
+
+
+
     # Кнопка "Сделать фото"
     photo_button = tk.Button(settings_window, text="Сделать фото", command=on_button_press)
-    photo_button.grid(row=7, column=1)
+    photo_button.grid(row=9, column=1)
 
     while True:
         ret, img = cap.read()  # img - сама картинка с камеры, ret - флаг
@@ -258,15 +296,10 @@ def main():
         h2 = hue_2_slider.get()
         s2 = satur_2_slider.get()
         v2 = value_2_slider.get()
-        Ar = area_slider.get()  # Значение Area фиксировано
+        Ar = area_slider.get()
 
-        # h1 = cv2.getTrackbarPos('hue_1', 'settings')
-        # s1 = cv2.getTrackbarPos('satur_1', 'settings')
-        # v1 = cv2.getTrackbarPos('value_1', 'settings')
-        # h2 = cv2.getTrackbarPos('hue_2', 'settings')
-        # s2 = cv2.getTrackbarPos('satur_2', 'settings')
-        # v2 = cv2.getTrackbarPos('value_2', 'settings')
-        # Ar = cv2.getTrackbarPos('Area', 'settings')
+
+
 
         # Формируем начальный и конечный цвет фильтра
         h_min = np.array((h1, s1, v1), np.uint8)
@@ -292,6 +325,9 @@ def main():
             tup = tuple(box.tolist())
             area = calculateTheArea(tup)
 
+            center_blue = (0,0)
+            value_rate = 50 # погрешность смещения центра синей рамки относительно центра зеленой
+
             if area >= Ar:
                 cv2.drawContours(img2, [box], -1, (0, 255, 0), 2)
                 # global x1, x2, y1, y2
@@ -300,22 +336,51 @@ def main():
                 y1 = int(tup[0][1])
                 y2 = int(tup[2][1])
 
+                # Определяем размеры синей рамки
+                blue_box_width = X_slider.get()  # ширина синей рамки
+                blue_box_height = Y_slider.get()  # высота синей рамки
+
+                blue_box_move_X = X_move_slider.get()
+                blue_box_move_Y = Y_move_slider.get()
+
+
+                # Центр синей рамки совпадает с центром зелёной рамки
+                new_center_blue = (((tup[0][0] + tup[2][0]) // 2) + blue_box_move_X, ((tup[0][1] + tup[2][1]) // 2)+blue_box_move_Y)
+
+                if ((abs(new_center_blue[0] - center_blue[0]) > value_rate) or (
+                        abs(new_center_blue[1] - center_blue[1]) > value_rate)):
+                    print(new_center_blue[0] - center_blue[0], new_center_blue[1] - center_blue[1])
+                    center_blue = new_center_blue
+
+                print(f"center_blue: {center_blue}")
+
+                # Вычисляем угол поворота
                 angle = calculate_rotation_angle(box)
 
-                print('Поворот: ', angle)
+                # Вычисляем новые координаты углов синей рамки после поворота
+                blue_rect_points = [
+                    (int(new_center_blue[0] - blue_box_width // 2), int(new_center_blue[1] - blue_box_height // 2)),
+                    (int(new_center_blue[0] + blue_box_width // 2), int(new_center_blue[1] - blue_box_height // 2)),
+                    (int(new_center_blue[0] + blue_box_width // 2), int(new_center_blue[1] + blue_box_height // 2)),
+                    (int(new_center_blue[0] - blue_box_width // 2), int(new_center_blue[1] + blue_box_height // 2))
+                ]
 
-                cv2.imshow('contours', img2) ##
+                # Применяем поворот к углам синей рамки
+                blue_rotated_points = []
+                for point in blue_rect_points:
+                    rotated_point = rotate_point(point, new_center_blue, angle)
+                    blue_rotated_points.append(rotated_point)
 
-        cv2.imshow('result', thresh)
+                # Рисуем синюю рамку
+                cv2.polylines(img2, [np.array(blue_rotated_points)], True, (255, 0, 0), 2)
 
-        if cv2.waitKey(10) == 32:  # Клавиша Пробел
-            print("________", x1, x2, y1, y2)
-            img2 = img2[y1:y2, x1:x2]
-            cv2.imwrite('cam.png', img2)
+                cv2.imshow('contours', img2)  ##
+
+            cv2.imshow('result', thresh)
 
         if button_pressed:
             # Формирование координат зеленой рамки
-            capture_images(img2, img, thresh, angle )
+            capture_images(img2, img, thresh, angle)
             button_pressed = False
 
         if cv2.waitKey(10) == 27:  # Клавиша Esc
