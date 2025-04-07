@@ -279,6 +279,9 @@ def main():
     photo_button = tk.Button(settings_window, text="Сделать фото", command=on_button_press)
     photo_button.grid(row=9, column=1)
 
+    center_blue = (0, 0)
+    value_rate = 50  # погрешность смещения центра синей рамки относительно центра зеленой
+
     while True:
         ret, img = cap.read()  # img - сама картинка с камеры, ret - флаг
 
@@ -297,8 +300,6 @@ def main():
         s2 = satur_2_slider.get()
         v2 = value_2_slider.get()
         Ar = area_slider.get()
-
-
 
 
         # Формируем начальный и конечный цвет фильтра
@@ -325,16 +326,15 @@ def main():
             tup = tuple(box.tolist())
             area = calculateTheArea(tup)
 
-            center_blue = (0,0)
-            value_rate = 50 # погрешность смещения центра синей рамки относительно центра зеленой
 
             if area >= Ar:
                 cv2.drawContours(img2, [box], -1, (0, 255, 0), 2)
                 # global x1, x2, y1, y2
-                x1 = int(tup[0][0])
-                x2 = int(tup[2][0])
-                y1 = int(tup[0][1])
-                y2 = int(tup[2][1])
+                # Определяю координаты левого-нижнего и верхнего-правого угла ЗЕЛЕНОЙ рамки
+                # x1 = int(tup[0][0])
+                # x2 = int(tup[2][0])
+                # y1 = int(tup[0][1])
+                # y2 = int(tup[2][1])
 
                 # Определяем размеры синей рамки
                 blue_box_width = X_slider.get()  # ширина синей рамки
@@ -365,6 +365,14 @@ def main():
                     (int(new_center_blue[0] - blue_box_width // 2), int(new_center_blue[1] + blue_box_height // 2))
                 ]
 
+
+                # Определяю координаты левого-нижнего и верхнего-правого угла СИНЕЙ рамки
+                x1 = int(new_center_blue[0] - blue_box_width // 2)
+                y1 = int(new_center_blue[1] - blue_box_height // 2)
+
+                x2 = int(new_center_blue[0] + blue_box_width // 2)
+                y2 = int(new_center_blue[1] + blue_box_height // 2)
+     
                 # Применяем поворот к углам синей рамки
                 blue_rotated_points = []
                 for point in blue_rect_points:
