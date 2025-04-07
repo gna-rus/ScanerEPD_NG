@@ -161,6 +161,38 @@ def on_button_press():
     global button_pressed
     button_pressed = True
 
+def refresh_contours_frame():
+    """Функция для обновления окна с зоной поиска"""
+    global cap, img, hsv, thresh, contours, hierarchy
+    global h1, s1, v1, h2, s2, v2, Ar
+
+    # Захват нового кадра с камеры
+    ret, img = cap.read()
+
+    if not ret:
+        return
+
+    # Преобразование кадра в HSV формат
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+    # Применение фильтра HSV
+    h1 = hue_1_slider.get()
+    s1 = satur_1_slider.get()
+    v1 = value_1_slider.get()
+    h2 = hue_2_slider.get()
+    s2 = satur_2_slider.get()
+    v2 = value_2_slider.get()
+    h_min = np.array((h1, s1, v1), np.uint8)
+    h_max = np.array((h2, s2, v2), np.uint8)
+    thresh = cv2.inRange(hsv, h_min, h_max)
+
+    # Поиск контуров
+    contours, hierarchy = cv2.findContours(thresh.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+    # Очистка и обновление содержимого окна 'contours'
+    img2 = img.copy()
+    cv2.drawContours(img2, contours, -1, (255, 0, 0), 2, cv2.LINE_4, hierarchy, 2)
+    cv2.imshow('contours', img2)
 
 def rotate_point(point, center, angle):
     """
@@ -188,6 +220,8 @@ def rotate_point(point, center, angle):
 # Основная функция программы
 def main():
     global button_pressed, x1, x2, y1, y2
+    global cap
+    global hue_1_slider, satur_1_slider, value_1_slider, hue_2_slider, satur_2_slider, value_2_slider, area_slider, X_slider,Y_slider, X_move_slider, Y_move_slider
     button_pressed = False
     x1, x2, y1, y2 = 0, 0, 0, 0  # Координаты для обрезки по рамке картинки
 
@@ -247,37 +281,41 @@ def main():
     area_slider = tk.Scale(settings_window, from_=0, to=120000, orient=tk.HORIZONTAL, length=200)
     area_slider.grid(row=6, column=1)
     area_label.grid(row=6, column=0)
-    area_slider.set(90000)
+    area_slider.set(100000)
 
     X_size_label = tk.Label(settings_window, text="X size: ")
     X_slider = tk.Scale(settings_window, from_=0, to=1000, orient=tk.HORIZONTAL, length=100)
-    X_slider.grid(row=7, column=0)
+    X_slider.grid(row=8, column=0)
     X_size_label.grid(row=7, column=0)
-    X_slider.set(120)
+    X_slider.set(294)
 
     Y_size_label = tk.Label(settings_window, text="Y size: ")
     Y_slider = tk.Scale(settings_window, from_=0, to=1000, orient=tk.HORIZONTAL, length=100)
-    Y_slider.grid(row=7, column=1)
+    Y_slider.grid(row=8, column=1)
     Y_size_label.grid(row=7, column=1)
-    Y_slider.set(120)
+    Y_slider.set(191)
 
     X_move_label = tk.Label(settings_window, text="X move: ")
     X_move_slider = tk.Scale(settings_window, from_=-100, to=100, orient=tk.HORIZONTAL, length=100)
-    X_move_slider.grid(row=8, column=0)
-    X_move_label.grid(row=8, column=0)
+    X_move_slider.grid(row=10, column=0)
+    X_move_label.grid(row=9, column=0)
     X_move_slider.set(0)
 
     Y_move_label = tk.Label(settings_window, text="Y move: ")
     Y_move_slider = tk.Scale(settings_window, from_=-100, to=100, orient=tk.HORIZONTAL, length=100)
-    Y_move_slider.grid(row=8, column=1)
-    Y_move_label.grid(row=8, column=1)
-    Y_move_slider.set(0)
+    Y_move_slider.grid(row=10, column=1)
+    Y_move_label.grid(row=9, column=1)
+    Y_move_slider.set(-6)
 
 
 
     # Кнопка "Сделать фото"
     photo_button = tk.Button(settings_window, text="Сделать фото", command=on_button_press)
-    photo_button.grid(row=9, column=1)
+    photo_button.grid(row=11, column=1)
+
+    # Кнопка "Обновить изображение"
+    photo_button = tk.Button(settings_window, text="Обновить", command=refresh_contours_frame)
+    photo_button.grid(row=11, column=0)
 
     center_blue = (0, 0)
     value_rate = 50  # погрешность смещения центра синей рамки относительно центра зеленой
@@ -292,6 +330,7 @@ def main():
 
 
         # Считывание значений бегунков
+        global h1, s1, v1, h2, s2,v2, Ar
 
         h1 = hue_1_slider.get()
         s1 = satur_1_slider.get()
@@ -372,7 +411,7 @@ def main():
 
                 x2 = int(new_center_blue[0] + blue_box_width // 2)
                 y2 = int(new_center_blue[1] + blue_box_height // 2)
-     
+
                 # Применяем поворот к углам синей рамки
                 blue_rotated_points = []
                 for point in blue_rect_points:
