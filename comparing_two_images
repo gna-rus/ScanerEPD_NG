@@ -1,0 +1,58 @@
+from PIL import Image
+import numpy as np
+
+def compare_images_and_save_differences(image1_path, image2_path, output_path):
+    # Открываем изображения
+    img1 = Image.open(image1_path).convert('RGB')  # Приводим к RGB
+    img2 = Image.open(image2_path).convert('RGB')  # Приводим к RGB
+
+    # Приводим изображения к одному размеру (если они разные)
+    img1 = img1.resize((min(img1.size[0], img2.size[0]), min(img1.size[1], img2.size[1])))
+    img2 = img2.resize((min(img1.size[0], img2.size[0]), min(img1.size[1], img2.size[1])))
+
+    # Преобразуем изображения в массивы
+    arr1 = np.array(img1)
+    arr2 = np.array(img2)
+
+    # Проверяем, что размеры одинаковые
+    if arr1.shape != arr2.shape:
+        raise ValueError("Изображения должны быть одного размера")
+
+    # Вычисляем разницу между изображениями
+    difference = np.abs(arr1 - arr2)
+
+    # Создаем маску для отличий
+    mask = np.any(difference > 0, axis=-1)  # Если хотя бы один канал отличается
+
+    # Создаем новое изображение для отличий
+    diff_image = np.zeros_like(arr1)
+    diff_image[mask] = [255, 0, 0]  # Задаем цвет для отличий (красный)
+
+    # Преобразуем массив обратно в изображение
+    diff_image_pil = Image.fromarray(diff_image)
+
+    # Сохраняем изображение с отличиями
+    diff_image_pil.save(output_path)
+
+    # Подсчитываем количество пикселей, которые отличаются
+    num_diff_pixels = np.sum(mask)
+
+    # Общее количество пикселей
+    total_pixels = arr1.shape[0] * arr1.shape[1] * (arr1.shape[2] if len(arr1.shape) > 2 else 1)
+
+    # Вычисляем процент отличия
+    difference_percentage = (num_diff_pixels / total_pixels) * 100
+
+    return difference_percentage
+
+
+
+# Пример использования
+image1_path = 'cropped_result_BP.png'
+image2_path = 'new_cropped_result_BP.png'
+output_path = 'difference_image.png'
+
+difference_percent = compare_images_and_save_differences(image1_path, image2_path, output_path)
+print(f'Процент отличия: {difference_percent:.2f}%')
+
+
