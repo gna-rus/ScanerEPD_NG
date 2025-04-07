@@ -121,25 +121,25 @@ def capture_images(full_contours_frame, full_camera_frame, full_result_frame, an
         print("Ошибка: полное изображение result отсутствует или пустое.")
 
     # Обрезаем изображения по габаритам зеленой рамки
-    global x1, x2, y1, y2
+    global x1, x2, y1, y2, name_foto
     center = ((x1 + x2) // 2, (y1 + y2) // 2)
 
 
 
     if full_contours_frame is not None and full_contours_frame.size > 0:
         width, height = calculate_side_lengths(x1, y1, x2, y2)
-        print_size('cropped_contours.png', width, height)
+        print_size(f'cropped_contours_{name_foto}.png', width, height)
         cropped_contours_frame = rotate_and_crop_image(full_contours_frame, center, angle, width, height)
-        cv2.imwrite('cropped_contours.png', cropped_contours_frame)
+        cv2.imwrite(f'cropped_contours_{name_foto}.png', cropped_contours_frame)
 
     else:
         print("Ошибка: обрезанное изображение contours отсутствует или пустое.")
 
     if full_camera_frame is not None and full_camera_frame.size > 0:
         width, height = calculate_side_lengths(x1, y1, x2, y2)
-        print_size('cropped_camera.png', width, height)
+        print_size(f'cropped_camera_{name_foto}.png', width, height)
         cropped_camera_frame = rotate_and_crop_image(full_camera_frame, center, angle, width, height)
-        cv2.imwrite('cropped_camera.png', cropped_camera_frame)
+        cv2.imwrite(f'cropped_camera_{name_foto}.png', cropped_camera_frame)
 
 
     else:
@@ -147,9 +147,9 @@ def capture_images(full_contours_frame, full_camera_frame, full_result_frame, an
 
     if full_result_frame is not None and full_result_frame.size > 0:
         width, height = calculate_side_lengths(x1, y1, x2, y2)
-        print_size('cropped_result.png', width, height)
+        print_size(f'cropped_result_{name_foto}.png', width, height)
         cropped_result_frame = rotate_and_crop_image(full_result_frame, center, angle, width, height)
-        cv2.imwrite('cropped_result.png', cropped_result_frame)
+        cv2.imwrite(f'cropped_result_{name_foto}.png', cropped_result_frame)
 
     else:
         print("Ошибка: обрезанное изображение result отсутствует или пустое.")
@@ -220,7 +220,7 @@ def rotate_point(point, center, angle):
 # Основная функция программы
 def main():
     global button_pressed, x1, x2, y1, y2
-    global cap
+    global cap, name_foto
     global hue_1_slider, satur_1_slider, value_1_slider, hue_2_slider, satur_2_slider, value_2_slider, area_slider, X_slider,Y_slider, X_move_slider, Y_move_slider
     button_pressed = False
     x1, x2, y1, y2 = 0, 0, 0, 0  # Координаты для обрезки по рамке картинки
@@ -307,15 +307,26 @@ def main():
     Y_move_label.grid(row=9, column=1)
     Y_move_slider.set(-6)
 
+    # Поле для текста
+    text_entry_label = tk.Label(settings_window, text="Наименование изделия:")
+    text_entry_label.grid(row=11, column=0)
+
+    text_entry = tk.Entry(settings_window)
+    text_entry.insert(0, 'BP')
+
+    text_entry.grid(row=11, column=1)
+
+    name_foto = text_entry.get()
+
 
 
     # Кнопка "Сделать фото"
     photo_button = tk.Button(settings_window, text="Сделать фото", command=on_button_press)
-    photo_button.grid(row=11, column=1)
+    photo_button.grid(row=12, column=1)
 
     # Кнопка "Обновить изображение"
     photo_button = tk.Button(settings_window, text="Обновить", command=refresh_contours_frame)
-    photo_button.grid(row=11, column=0)
+    photo_button.grid(row=12, column=0)
 
     center_blue = (0, 0)
     value_rate = 50  # погрешность смещения центра синей рамки относительно центра зеленой
