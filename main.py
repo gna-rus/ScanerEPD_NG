@@ -6,6 +6,9 @@ from skimage.metrics import structural_similarity as ssim
 import math
 
 
+# Глобальная переменная для управления остановкой процесса обнаружения объектов
+stop_refreshing_contours = False
+
 # Функция подсчета площади квадрата по координатам (принимает кортеж списков)
 def calculateTheArea(tupel1):
     list1 = list(tupel1)
@@ -106,17 +109,17 @@ def capture_images(full_contours_frame, full_camera_frame, full_result_frame, an
 
     # Сохраняем полные изображения
     if full_contours_frame is not None and full_contours_frame.size > 0:
-        cv2.imwrite('full_contours.png', full_contours_frame)
+        cv2.imwrite('./images/full_contours.png', full_contours_frame)
     else:
         print("Ошибка: полное изображение contours отсутствует или пустое.")
 
     if full_camera_frame is not None and full_camera_frame.size > 0:
-        cv2.imwrite('full_camera.png', full_camera_frame)
+        cv2.imwrite('./images/full_camera.png', full_camera_frame)
     else:
         print("Ошибка: полное изображение camera отсутствует или пустое.")
 
     if full_result_frame is not None and full_result_frame.size > 0:
-        cv2.imwrite('full_result.png', full_result_frame)
+        cv2.imwrite('./images/full_result.png', full_result_frame)
     else:
         print("Ошибка: полное изображение result отсутствует или пустое.")
 
@@ -128,18 +131,18 @@ def capture_images(full_contours_frame, full_camera_frame, full_result_frame, an
 
     if full_contours_frame is not None and full_contours_frame.size > 0:
         width, height = calculate_side_lengths(x1, y1, x2, y2)
-        print_size(f'cropped_contours_{name_foto}.png', width, height)
+        print_size(f'./images/cropped_contours_{name_foto}.png', width, height)
         cropped_contours_frame = rotate_and_crop_image(full_contours_frame, center, angle, width, height)
-        cv2.imwrite(f'cropped_contours_{name_foto}.png', cropped_contours_frame)
+        cv2.imwrite(f'./images/cropped_contours_{name_foto}.png', cropped_contours_frame)
 
     else:
         print("Ошибка: обрезанное изображение contours отсутствует или пустое.")
 
     if full_camera_frame is not None and full_camera_frame.size > 0:
         width, height = calculate_side_lengths(x1, y1, x2, y2)
-        print_size(f'cropped_camera_{name_foto}.png', width, height)
+        print_size(f'./images/cropped_camera_{name_foto}.png', width, height)
         cropped_camera_frame = rotate_and_crop_image(full_camera_frame, center, angle, width, height)
-        cv2.imwrite(f'cropped_camera_{name_foto}.png', cropped_camera_frame)
+        cv2.imwrite(f'./images/cropped_camera_{name_foto}.png', cropped_camera_frame)
 
 
     else:
@@ -147,9 +150,9 @@ def capture_images(full_contours_frame, full_camera_frame, full_result_frame, an
 
     if full_result_frame is not None and full_result_frame.size > 0:
         width, height = calculate_side_lengths(x1, y1, x2, y2)
-        print_size(f'cropped_result_{name_foto}.png', width, height)
+        print_size(f'./images/cropped_result_{name_foto}.png', width, height)
         cropped_result_frame = rotate_and_crop_image(full_result_frame, center, angle, width, height)
-        cv2.imwrite(f'cropped_result_{name_foto}.png', cropped_result_frame)
+        cv2.imwrite(f'./images/cropped_result_{name_foto}.png', cropped_result_frame)
 
     else:
         print("Ошибка: обрезанное изображение result отсутствует или пустое.")
@@ -161,10 +164,25 @@ def on_button_press():
     global button_pressed
     button_pressed = True
 
-def refresh_contours_frame():
+def on_button_stop():
+    """Функция для остановки поиска области"""
+    global stop_refreshing_contours
+    stop_refreshing_contours = not stop_refreshing_contours
+
+    print("Поиск объектов приостановлен!")
+
+
+def buttom_refresh_contours_frame():
     """Функция для обновления окна с зоной поиска"""
     global cap, img, hsv, thresh, contours, hierarchy
     global h1, s1, v1, h2, s2, v2, Ar
+
+    print(1)
+    # Проверяем, не был ли установлен флаг остановки
+    if stop_refreshing_contours:
+        print(2)
+        return
+
 
     # Захват нового кадра с камеры
     ret, img = cap.read()
@@ -296,13 +314,13 @@ def main():
     Y_slider.set(191)
 
     X_move_label = tk.Label(settings_window, text="X move: ")
-    X_move_slider = tk.Scale(settings_window, from_=-100, to=100, orient=tk.HORIZONTAL, length=100)
+    X_move_slider = tk.Scale(settings_window, from_=-200, to=200, orient=tk.HORIZONTAL, length=100)
     X_move_slider.grid(row=10, column=0)
     X_move_label.grid(row=9, column=0)
     X_move_slider.set(0)
 
     Y_move_label = tk.Label(settings_window, text="Y move: ")
-    Y_move_slider = tk.Scale(settings_window, from_=-100, to=100, orient=tk.HORIZONTAL, length=100)
+    Y_move_slider = tk.Scale(settings_window, from_=-200, to=200, orient=tk.HORIZONTAL, length=100)
     Y_move_slider.grid(row=10, column=1)
     Y_move_label.grid(row=9, column=1)
     Y_move_slider.set(-6)
@@ -319,20 +337,26 @@ def main():
     name_foto = text_entry.get()
 
 
-
     # Кнопка "Сделать фото"
-    photo_button = tk.Button(settings_window, text="Сделать фото", command=on_button_press)
+    photo_button = tk.Button(settings_window, text="Сделать фото", command=on_button_press, width=20)
     photo_button.grid(row=12, column=1)
 
     # Кнопка "Обновить изображение"
-    photo_button = tk.Button(settings_window, text="Обновить", command=refresh_contours_frame)
+    photo_button = tk.Button(settings_window, text="Обновить", command=buttom_refresh_contours_frame, width=20)
     photo_button.grid(row=12, column=0)
+
+    # Кнопка "Stop" (для прекращения поиска но при этом сохранения возможности настройки позиции для фото)
+    buttom_stop = tk.Button(settings_window, text='Stop', command=on_button_stop, width=20)
+    buttom_stop.grid(row=13, column=0)
 
     center_blue = (0, 0)
     value_rate = 50  # погрешность смещения центра синей рамки относительно центра зеленой
 
     while True:
         ret, img = cap.read()  # img - сама картинка с камеры, ret - флаг
+
+        # if stop_refreshing_contours:
+        #     continue
 
         if not ret:
             continue
@@ -351,7 +375,6 @@ def main():
         v2 = value_2_slider.get()
         Ar = area_slider.get()
 
-
         # Формируем начальный и конечный цвет фильтра
         h_min = np.array((h1, s1, v1), np.uint8)
         h_max = np.array((h2, s2, v2), np.uint8)
@@ -369,72 +392,67 @@ def main():
         cv2.imshow("camera", img)  # Показывает все контуры
 
         # Алгоритм поиска и рисования прямоугольника
-        for cnt in contours:
-            rect = cv2.minAreaRect(cnt)
-            box = cv2.boxPoints(rect)
-            box = np.int32(box)
-            tup = tuple(box.tolist())
-            area = calculateTheArea(tup)
+        if stop_refreshing_contours == False: # Если прожата кнопка STOP то поиск зеленой рамки не будет осуществляться
+
+            for cnt in contours:
+                rect = cv2.minAreaRect(cnt)
+                box = cv2.boxPoints(rect)
+                box = np.int32(box)
+                tup = tuple(box.tolist())
+                area = calculateTheArea(tup)
+
+                if area >= Ar:
+                    cv2.drawContours(img2, [box], -1, (0, 255, 0), 2)
+
+                    # Определяем размеры синей рамки
+                    blue_box_width = X_slider.get()  # ширина синей рамки
+                    blue_box_height = Y_slider.get()  # высота синей рамки
+
+                    blue_box_move_X = X_move_slider.get()
+                    blue_box_move_Y = Y_move_slider.get()
+
+                    # Центр синей рамки совпадает с центром зелёной рамки
+                    new_center_blue = (((tup[0][0] + tup[2][0]) // 2) + blue_box_move_X, ((tup[0][1] + tup[2][1]) // 2)+blue_box_move_Y)
+
+                    # Настройка смещение центра синей рамки относительно центра зеленой рамки
+                    if ((abs(new_center_blue[0] - center_blue[0]) > value_rate) or (
+                            abs(new_center_blue[1] - center_blue[1]) > value_rate)):
+                        print(new_center_blue[0] - center_blue[0], new_center_blue[1] - center_blue[1])
+                        center_blue = new_center_blue
+
+                    print(f"center_blue: {center_blue}")
+
+                    # Вычисляем угол поворота
+                    angle = calculate_rotation_angle(box)
+
+                    # Вычисляем новые координаты углов синей рамки после поворота
+                    blue_rect_points = [
+                        (int(new_center_blue[0] - blue_box_width // 2), int(new_center_blue[1] - blue_box_height // 2)),
+                        (int(new_center_blue[0] + blue_box_width // 2), int(new_center_blue[1] - blue_box_height // 2)),
+                        (int(new_center_blue[0] + blue_box_width // 2), int(new_center_blue[1] + blue_box_height // 2)),
+                        (int(new_center_blue[0] - blue_box_width // 2), int(new_center_blue[1] + blue_box_height // 2))
+                    ]
 
 
-            if area >= Ar:
-                cv2.drawContours(img2, [box], -1, (0, 255, 0), 2)
-                # global x1, x2, y1, y2
-                # Определяю координаты левого-нижнего и верхнего-правого угла ЗЕЛЕНОЙ рамки
-                # x1 = int(tup[0][0])
-                # x2 = int(tup[2][0])
-                # y1 = int(tup[0][1])
-                # y2 = int(tup[2][1])
+                    # Определяю координаты левого-нижнего и верхнего-правого угла СИНЕЙ рамки
+                    x1 = int(new_center_blue[0] - blue_box_width // 2)
+                    y1 = int(new_center_blue[1] - blue_box_height // 2)
 
-                # Определяем размеры синей рамки
-                blue_box_width = X_slider.get()  # ширина синей рамки
-                blue_box_height = Y_slider.get()  # высота синей рамки
+                    x2 = int(new_center_blue[0] + blue_box_width // 2)
+                    y2 = int(new_center_blue[1] + blue_box_height // 2)
 
-                blue_box_move_X = X_move_slider.get()
-                blue_box_move_Y = Y_move_slider.get()
+                    # Применяем поворот к углам синей рамки
+                    blue_rotated_points = []
+                    for point in blue_rect_points:
+                        rotated_point = rotate_point(point, new_center_blue, angle)
+                        blue_rotated_points.append(rotated_point)
 
+                    # Рисуем синюю рамку
+                    cv2.polylines(img2, [np.array(blue_rotated_points)], True, (255, 0, 0), 2)
 
-                # Центр синей рамки совпадает с центром зелёной рамки
-                new_center_blue = (((tup[0][0] + tup[2][0]) // 2) + blue_box_move_X, ((tup[0][1] + tup[2][1]) // 2)+blue_box_move_Y)
+                    cv2.imshow('contours', img2)  ##
 
-                if ((abs(new_center_blue[0] - center_blue[0]) > value_rate) or (
-                        abs(new_center_blue[1] - center_blue[1]) > value_rate)):
-                    print(new_center_blue[0] - center_blue[0], new_center_blue[1] - center_blue[1])
-                    center_blue = new_center_blue
-
-                print(f"center_blue: {center_blue}")
-
-                # Вычисляем угол поворота
-                angle = calculate_rotation_angle(box)
-
-                # Вычисляем новые координаты углов синей рамки после поворота
-                blue_rect_points = [
-                    (int(new_center_blue[0] - blue_box_width // 2), int(new_center_blue[1] - blue_box_height // 2)),
-                    (int(new_center_blue[0] + blue_box_width // 2), int(new_center_blue[1] - blue_box_height // 2)),
-                    (int(new_center_blue[0] + blue_box_width // 2), int(new_center_blue[1] + blue_box_height // 2)),
-                    (int(new_center_blue[0] - blue_box_width // 2), int(new_center_blue[1] + blue_box_height // 2))
-                ]
-
-
-                # Определяю координаты левого-нижнего и верхнего-правого угла СИНЕЙ рамки
-                x1 = int(new_center_blue[0] - blue_box_width // 2)
-                y1 = int(new_center_blue[1] - blue_box_height // 2)
-
-                x2 = int(new_center_blue[0] + blue_box_width // 2)
-                y2 = int(new_center_blue[1] + blue_box_height // 2)
-
-                # Применяем поворот к углам синей рамки
-                blue_rotated_points = []
-                for point in blue_rect_points:
-                    rotated_point = rotate_point(point, new_center_blue, angle)
-                    blue_rotated_points.append(rotated_point)
-
-                # Рисуем синюю рамку
-                cv2.polylines(img2, [np.array(blue_rotated_points)], True, (255, 0, 0), 2)
-
-                cv2.imshow('contours', img2)  ##
-
-            cv2.imshow('result', thresh)
+                cv2.imshow('result', thresh)
 
         if button_pressed:
             # Формирование координат зеленой рамки
@@ -447,13 +465,6 @@ def main():
     cap.release()
     cv2.destroyAllWindows()
 
-    if img_with_object is not None:
-        reference_image = cv2.imread('reference_image.png')  # Загружаем эталонное изображение
-        score, _ = compare_images(img_with_object, reference_image)
-        if score > 0.9:  # Устанавливаем порог сходства
-            print("Объекты совпадают.")
-        else:
-            print("Объекты отличаются.")
 
 
 if __name__ == "__main__":
