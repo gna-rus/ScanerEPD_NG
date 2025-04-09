@@ -48,9 +48,9 @@ def compare_images_and_save_differences(image1_path, image2_path, output_path):
 
 
 # Пример использования
-image1_path = 'cropped_result_BP.png'
-image2_path = 'new_cropped_result_BP.png'
-output_path = 'difference_image.png'
+image1_path = './images/cropped_result_BP.png'
+image2_path = './images/new_cropped_result_BP.png'
+output_path = './images/difference_image.png'
 
 difference_percent = compare_images_and_save_differences(image1_path, image2_path, output_path)
 print(f'Процент отличия: {difference_percent:.2f}%')
