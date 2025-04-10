@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import tkinter as tk
+from tkinter import *
 from threading import Thread
 from skimage.metrics import structural_similarity as ssim
 import math
@@ -263,7 +264,7 @@ def rotate_point(point, center, angle):
 def main():
     global button_pressed, x1, x2, y1, y2
     global cap, name_foto, global_angle, is_stopped, buttom_stop
-    global hue_1_slider, satur_1_slider, value_1_slider, hue_2_slider, satur_2_slider, value_2_slider, area_slider, X_slider,Y_slider, X_move_slider, Y_move_slider
+    global hue_1_slider, satur_1_slider, value_1_slider, hue_2_slider, satur_2_slider, value_2_slider, area_slider, X_slider,Y_slider, X_move_slider, Y_move_slider, turn_blue_area_slider
     button_pressed = False
     x1, x2, y1, y2 = 0, 0, 0, 0  # Координаты для обрезки по рамке картинки
 
@@ -317,7 +318,7 @@ def main():
     value_2_slider = tk.Scale(settings_window, from_=0, to=255, orient=tk.HORIZONTAL, length=200)
     value_2_slider.grid(row=5, column=1)
     value_2_label.grid(row=5, column=0)
-    value_2_slider.set(155)
+    value_2_slider.set(200)
 
     area_label = tk.Label(settings_window, text="Area: ")
     area_slider = tk.Scale(settings_window, from_=0, to=120000, orient=tk.HORIZONTAL, length=200)
@@ -326,53 +327,58 @@ def main():
     area_slider.set(100000)
 
     X_size_label = tk.Label(settings_window, text="X size: ")
-    X_slider = tk.Scale(settings_window, from_=0, to=1000, orient=tk.HORIZONTAL, length=150)
+    X_slider = tk.Scale(settings_window, from_=0, to=1000, orient=tk.HORIZONTAL, length=150, width = 20)
     X_slider.grid(row=8, column=0)
     X_size_label.grid(row=7, column=0)
     X_slider.set(294)
 
     Y_size_label = tk.Label(settings_window, text="Y size: ")
-    Y_slider = tk.Scale(settings_window, from_=0, to=1000, orient=tk.HORIZONTAL, length=150)
+    Y_slider = tk.Scale(settings_window, from_=0, to=1000, orient=tk.HORIZONTAL, length=150, width = 20)
     Y_slider.grid(row=8, column=1)
     Y_size_label.grid(row=7, column=1)
     Y_slider.set(191)
 
     X_move_label = tk.Label(settings_window, text="X move: ")
-    X_move_slider = tk.Scale(settings_window, from_=-200, to=200, orient=tk.HORIZONTAL, length=150)
+    X_move_slider = tk.Scale(settings_window, from_=-200, to=200, orient=tk.HORIZONTAL, length=150, width = 20)
     X_move_slider.grid(row=10, column=0)
     X_move_label.grid(row=9, column=0)
     X_move_slider.set(0)
 
     Y_move_label = tk.Label(settings_window, text="Y move: ")
-    Y_move_slider = tk.Scale(settings_window, from_=-200, to=200, orient=tk.HORIZONTAL, length=150)
+    Y_move_slider = tk.Scale(settings_window, from_=-200, to=200, orient=tk.HORIZONTAL, length=150, width = 20)
     Y_move_slider.grid(row=10, column=1)
     Y_move_label.grid(row=9, column=1)
     Y_move_slider.set(-6)
 
+    turn_blue_area_label = tk.Label(settings_window, text="Angle of rotation")
+    turn_blue_area_slider = tk.Scale(settings_window, from_=-90, to=90, orient=tk.HORIZONTAL, length=150, width = 20)
+    turn_blue_area_slider.grid(row=11, column=1)
+    turn_blue_area_label.grid(row=11, column=0)
+    turn_blue_area_slider.set(0)
+
     # Поле для текста
     text_entry_label = tk.Label(settings_window, text="Наименование изделия:")
-    text_entry_label.grid(row=11, column=0)
+    text_entry_label.grid(row=12, column=0)
 
     text_entry = tk.Entry(settings_window)
     text_entry.insert(0, 'BP')
 
-    text_entry.grid(row=11, column=1)
-
+    text_entry.grid(row=12, column=1)
     name_foto = text_entry.get()
 
 
     # Кнопка "Сделать фото"
     photo_button = tk.Button(settings_window, text="Сделать фото", command=on_button_press, width=20)
-    photo_button.grid(row=12, column=1)
+    photo_button.grid(row=13, column=1)
 
     # Кнопка "Обновить изображение"
     photo_button = tk.Button(settings_window, text="Обновить", command=buttom_refresh_contours_frame, width=20)
-    photo_button.grid(row=12, column=0)
+    photo_button.grid(row=13, column=0)
 
     # Кнопка "Stop" (для прекращения поиска но при этом сохранения возможности настройки позиции для фото)
     is_stopped = False  # Изначально программа запущена
     buttom_stop = tk.Button(settings_window, text='Stop', command=on_button_stop, width=20)
-    buttom_stop.grid(row=13, column=0)
+    buttom_stop.grid(row=14, column=0)
 
     center_blue = (0, 0)
     value_rate = 50  # погрешность смещения центра синей рамки относительно центра зеленой
@@ -443,9 +449,9 @@ def main():
                 cv2.imshow('result', thresh)
 
         else:
-
+            my_angle = global_angle+turn_blue_area_slider.get()
             x1, x2, y1, y2 = draw_blue_box(img2, center, X_slider.get(), Y_slider.get(), X_move_slider.get(),
-                                           Y_move_slider.get(), global_angle)
+                                           Y_move_slider.get(), my_angle)
             cv2.imshow('contours', img2)
 
 
@@ -461,7 +467,6 @@ def main():
 
     cap.release()
     cv2.destroyAllWindows()
-
 
 
 if __name__ == "__main__":
