@@ -52,15 +52,6 @@ def rotate_and_crop_image(image, center, angle, width, height, scale=1.0):
     x2 = min(new_width, int(center[0] + new_width // 2))
     y2 = min(new_height, int(center[1] + new_height // 2))
 
-    print(f"x1, x2, y1, y2", x1, x2, y1, y2)
-    print('height ', height)
-    print('width ', width)
-    print('type ', type(rotated_img))
-
-    # Обрезаем изображение по новой рамке
-    # cropped_image = rotated_img[y1:y2, x1:x2]
-    # if width > height:
-    #     height, width = width, height
 
     # Рассчитываем координаты верхнего левого и нижнего правого углов прямоугольника
     top_left_x = int(center[0] - width / 2)
@@ -68,9 +59,6 @@ def rotate_and_crop_image(image, center, angle, width, height, scale=1.0):
     bottom_right_x = int(center[0] + width / 2)
     bottom_right_y = int(center[1] + height / 2)
     cropped_image = rotated_img[top_left_y:bottom_right_y, top_left_x:bottom_right_x]
-
-    print(image)
-
 
     return cropped_image
 
@@ -177,8 +165,6 @@ def draw_blue_box(img, center, box_width, box_height, move_X, move_Y, angle):
     x2_loc = int(new_center_blue[0] + box_width // 2)
     y2_loc = int(new_center_blue[1] + box_height // 2)
 
-
-
     # Применяем поворот к углам синей рамки
     blue_rotated_points = []
     for point in blue_rect_points:
@@ -196,6 +182,15 @@ def on_button_press():
 def on_button_stop():
     """Функция для остановки поиска области"""
     global stop_refreshing_contours
+    global is_stopped, buttom_stop
+
+    if is_stopped:  # Если сейчас остановлено
+        buttom_stop.config(text="Start")  # Меняем текст на "Start"
+        is_stopped = False           # Теперь программа запущена
+    else:
+        buttom_stop.config(text="Stop")   # Меняем текст на "Stop"
+        is_stopped = True            # Теперь программа остановлена
+
     stop_refreshing_contours = not stop_refreshing_contours
 
     print("Поиск объектов приостановлен!")
@@ -267,7 +262,7 @@ def rotate_point(point, center, angle):
 # Основная функция программы
 def main():
     global button_pressed, x1, x2, y1, y2
-    global cap, name_foto, global_angle
+    global cap, name_foto, global_angle, is_stopped, buttom_stop
     global hue_1_slider, satur_1_slider, value_1_slider, hue_2_slider, satur_2_slider, value_2_slider, area_slider, X_slider,Y_slider, X_move_slider, Y_move_slider
     button_pressed = False
     x1, x2, y1, y2 = 0, 0, 0, 0  # Координаты для обрезки по рамке картинки
@@ -375,6 +370,7 @@ def main():
     photo_button.grid(row=12, column=0)
 
     # Кнопка "Stop" (для прекращения поиска но при этом сохранения возможности настройки позиции для фото)
+    is_stopped = False  # Изначально программа запущена
     buttom_stop = tk.Button(settings_window, text='Stop', command=on_button_stop, width=20)
     buttom_stop.grid(row=13, column=0)
 
