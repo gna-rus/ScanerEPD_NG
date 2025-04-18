@@ -9,7 +9,7 @@ def clean_image(
         morph_kernel_size=(2, 2),  # Размер структурирующего элемента для морфологии
         min_area_to_keep=100,  # Минимальная площадь области, которую оставляем (количество пикселей)
         close_iterations=1,  # Количество итераций морфологического закрытия
-        open_iterations=2,  # Количество итераций открытия
+        open_iterations=1,  # Количество итераций открытия
         invert=True  # Инвертировать изображение после обработки
 ):
     """
@@ -69,7 +69,7 @@ def clean_image(
 
 # Пример использования функции
 image_path = r'D:\python\OpenCV\Scripts\ScanerNG\images\cropped_result_BP.png'
-cleaned_image = clean_image(image_path,threshold_value=20, min_area_to_keep=5)
+cleaned_image = clean_image(image_path,threshold_value=150, min_area_to_keep=5)
 
 # Показываем результат
 cv2.imshow('Cleaned Image', cleaned_image)
