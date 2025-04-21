@@ -23,8 +23,10 @@ def nothing(*arg):
 def run_tkinter():
     global button_pressed
     root = tk.Tk()
-    # button = tk.Button(root, text="Сделать фото", command=lambda: set_button_pressed(True))
-    # button.pack()
+    # Скрываем окно сразу после его создания
+    root.withdraw()
+    # # button = tk.Button(root, text="Сделать фото", command=lambda: set_button_pressed(True))
+    # # button.pack()
     root.mainloop()
 
 
@@ -98,52 +100,55 @@ def calculate_rotation_angle(box):
     return angle_deg
 
 
-def capture_images(full_contours_frame, full_camera_frame, full_result_frame, angle):
+def capture_images(full_contours_frame, full_camera_frame, full_result_frame, angle, name_foto):
+    try:
 
-    # Сохраняем полные изображения
-    if full_contours_frame is not None and full_contours_frame.size > 0:
-        cv2.imwrite('./images/full_contours.png', full_contours_frame)
-    else:
-        print("Ошибка: полное изображение contours отсутствует или пустое.")
+        # Сохраняем полные изображения
+        if full_contours_frame is not None and full_contours_frame.size > 0:
+            cv2.imwrite('./images/full_contours.png', full_contours_frame)
+        else:
+            print("Ошибка: полное изображение contours отсутствует или пустое.")
 
-    if full_camera_frame is not None and full_camera_frame.size > 0:
-        cv2.imwrite('./images/full_camera.png', full_camera_frame)
-    else:
-        print("Ошибка: полное изображение camera отсутствует или пустое.")
+        if full_camera_frame is not None and full_camera_frame.size > 0:
+            cv2.imwrite('./images/full_camera.png', full_camera_frame)
+        else:
+            print("Ошибка: полное изображение camera отсутствует или пустое.")
 
-    if full_result_frame is not None and full_result_frame.size > 0:
-        cv2.imwrite('./images/full_result.png', full_result_frame)
-    else:
-        print("Ошибка: полное изображение result отсутствует или пустое.")
+        if full_result_frame is not None and full_result_frame.size > 0:
+            cv2.imwrite('./images/full_result.png', full_result_frame)
+        else:
+            print("Ошибка: полное изображение result отсутствует или пустое.")
 
-    # Обрезаем изображения по габаритам зеленой рамки
-    global x1, x2, y1, y2, name_foto
-    center = ((x1 + x2) // 2, (y1 + y2) // 2)
-    width, height = calculate_side_lengths(x1, y1, x2, y2)
+        # Обрезаем изображения по габаритам зеленой рамки
+        global x1, x2, y1, y2
+        center = ((x1 + x2) // 2, (y1 + y2) // 2)
+        width, height = calculate_side_lengths(x1, y1, x2, y2)
 
 
-    if full_contours_frame is not None and full_contours_frame.size > 0:
-        print_size(f'./images/cropped_contours_{name_foto}.png', width, height)
-        cropped_contours_frame = rotate_and_crop_image(full_contours_frame, center, angle, width, height)
-        cv2.imwrite(f'./images/cropped_contours_{name_foto}.png', cropped_contours_frame)
-    else:
-        print("Ошибка: обрезанное изображение contours отсутствует или пустое.")
+        if full_contours_frame is not None and full_contours_frame.size > 0:
+            print_size(f'./images/cropped_contours_{name_foto}.png', width, height)
+            cropped_contours_frame = rotate_and_crop_image(full_contours_frame, center, angle, width, height)
+            cv2.imwrite(f'./images/cropped_contours_{name_foto}.png', cropped_contours_frame)
+        else:
+            print("Ошибка: обрезанное изображение contours отсутствует или пустое.")
 
-    if full_camera_frame is not None and full_camera_frame.size > 0:
-        print_size(f'./images/cropped_camera_{name_foto}.png', width, height)
-        cropped_camera_frame = rotate_and_crop_image(full_camera_frame, center, angle, width, height)
-        cv2.imwrite(f'./images/cropped_camera_{name_foto}.png', cropped_camera_frame)
-    else:
-        print("Ошибка: обрезанное изображение camera отсутствует или пустое.")
+        if full_camera_frame is not None and full_camera_frame.size > 0:
+            print_size(f'./images/cropped_camera_{name_foto}.png', width, height)
+            cropped_camera_frame = rotate_and_crop_image(full_camera_frame, center, angle, width, height)
+            cv2.imwrite(f'./images/cropped_camera_{name_foto}.png', cropped_camera_frame)
+        else:
+            print("Ошибка: обрезанное изображение camera отсутствует или пустое.")
 
-    if full_result_frame is not None and full_result_frame.size > 0:
-        print_size(f'./images/cropped_result_{name_foto}.png', width, height)
-        cropped_result_frame = rotate_and_crop_image(full_result_frame, center, angle, width, height)
-        cv2.imwrite(f'./images/cropped_result_{name_foto}.png', cropped_result_frame)
-    else:
-        print("Ошибка: обрезанное изображение result отсутствует или пустое.")
+        if full_result_frame is not None and full_result_frame.size > 0:
+            print_size(f'./images/cropped_result_{name_foto}.png', width, height)
+            cropped_result_frame = rotate_and_crop_image(full_result_frame, center, angle, width, height)
+            cv2.imwrite(f'./images/cropped_result_{name_foto}.png', cropped_result_frame)
+        else:
+            print("Ошибка: обрезанное изображение result отсутствует или пустое.")
 
-    print("Шесть фотографий сделаны и сохранены.")
+        print("Шесть фотографий сделаны и сохранены.")
+    except:
+        print('Не получилось сделать фото')
 
 
 def draw_blue_box(img, center, box_width, box_height, move_X, move_Y, angle):
@@ -263,7 +268,7 @@ def rotate_point(point, center, angle):
 # Основная функция программы
 def main():
     global button_pressed, x1, x2, y1, y2
-    global cap, name_foto, global_angle, is_stopped, buttom_stop
+    global cap, global_angle, is_stopped, buttom_stop
     global hue_1_slider, satur_1_slider, value_1_slider, hue_2_slider, satur_2_slider, value_2_slider, area_slider, X_slider,Y_slider, X_move_slider, Y_move_slider, turn_blue_area_slider
     button_pressed = False
     x1, x2, y1, y2 = 0, 0, 0, 0  # Координаты для обрезки по рамке картинки
@@ -366,7 +371,6 @@ def main():
     text_entry.grid(row=12, column=1)
     name_foto = text_entry.get()
 
-
     # Кнопка "Сделать фото"
     photo_button = tk.Button(settings_window, text="Сделать фото", command=on_button_press, width=20)
     photo_button.grid(row=13, column=1)
@@ -382,6 +386,8 @@ def main():
 
     center_blue = (0, 0)
     value_rate = 50  # погрешность смещения центра синей рамки относительно центра зеленой
+
+
 
     while True:
         ret, img = cap.read()  # img - сама картинка с камеры, ret - флаг
@@ -457,7 +463,8 @@ def main():
 
         if button_pressed:
             # Формирование координат зеленой рамки
-            capture_images(img2, img, thresh, angle)
+            print("___________name_foto________", name_foto)
+            capture_images(img2, img, thresh, angle, name_foto)
             button_pressed = False
 
         if cv2.waitKey(10) == 27:  # Клавиша Esc
