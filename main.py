@@ -100,9 +100,10 @@ def calculate_rotation_angle(box):
     return angle_deg
 
 
-def capture_images(full_contours_frame, full_camera_frame, full_result_frame, angle, name_foto):
+def capture_images(full_contours_frame, full_camera_frame, full_result_frame, angle):
+    name_foto = text_entry.get() # Передаю текст из текстового поля для названия    
+    
     try:
-
         # Сохраняем полные изображения
         if full_contours_frame is not None and full_contours_frame.size > 0:
             cv2.imwrite('./images/full_contours.png', full_contours_frame)
@@ -269,7 +270,8 @@ def rotate_point(point, center, angle):
 def main():
     global button_pressed, x1, x2, y1, y2
     global cap, global_angle, is_stopped, buttom_stop
-    global hue_1_slider, satur_1_slider, value_1_slider, hue_2_slider, satur_2_slider, value_2_slider, area_slider, X_slider,Y_slider, X_move_slider, Y_move_slider, turn_blue_area_slider
+    global hue_1_slider, satur_1_slider, value_1_slider, hue_2_slider, satur_2_slider, value_2_slider, area_slider, \
+        X_slider,Y_slider, X_move_slider, Y_move_slider, turn_blue_area_slider, text_entry
     button_pressed = False
     x1, x2, y1, y2 = 0, 0, 0, 0  # Координаты для обрезки по рамке картинки
 
@@ -369,7 +371,7 @@ def main():
     text_entry.insert(0, 'BP')
 
     text_entry.grid(row=12, column=1)
-    name_foto = text_entry.get()
+
 
     # Кнопка "Сделать фото"
     photo_button = tk.Button(settings_window, text="Сделать фото", command=on_button_press, width=20)
@@ -463,8 +465,8 @@ def main():
 
         if button_pressed:
             # Формирование координат зеленой рамки
-            print("___________name_foto________", name_foto)
-            capture_images(img2, img, thresh, angle, name_foto)
+
+            capture_images(img2, img, thresh, angle)
             button_pressed = False
 
         if cv2.waitKey(10) == 27:  # Клавиша Esc
